@@ -11,20 +11,18 @@
             $mysqli->select_db($database) or die( "Unable to select database");
 
             $account = $data->account;
-            $query="SELECT * FROM metadata WHERE account = '{$account}'";
+            $amount = $data->amount;
+            $query="SELECT id,url FROM metadata WHERE status ='' LIMIT {$amount}";
             $result = $mysqli->query("$query");
-            $limit=3;
-            $available = $limit - $result->num_rows;
-            deliver_response(200, "success", "{\"available\":{$available}}");      
-            // if ($result->num_rows > $limit) {
-            //     deliver_response(200, "success", '{"availabe"}');      
-            // } else {   
-            //     $query="INSERT metadata (url,account,status) VALUES ('some_url','$account','status')";
-            //     $mysqli->query("$query");
-                
-            //     $mysqli->close();
-            //     deliver_response(200, "success", $query);      
-            // }
+            $result_array = array();
+            while ($row = $result->fetch_assoc()) {
+                $json = "{\"id\":{$row["id"]},\"url\":\"{$row["url"]}\"}";
+                // $row_string = implode(",",$row);
+                array_push($result_array, $json);             
+            }            
+            $implodeded = implode(",",$result_array);
+            deliver_response(200, "success", "[" . $implodeded . "]");  
+            $result->free();            
         }
     }
    
