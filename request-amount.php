@@ -12,24 +12,43 @@
 
             $account = $data->account;
             $amount = $data->amount;
-            $user_only_query="SELECT * FROM metadata WHERE account = '{$account}' AND (status = '' or status = 'pending')";
+            $user_only_query="SELECT * FROM metadata WHERE account = '{$account}' AND status = 'pending' LIMIT {$amount}";
             $result = $mysqli->query("$user_only_query");
-            $limit=3;
-            $available = $limit - $result->num_rows;
-            if ($limit >= $amount) {
-                // serve these records according to amount
-            }
-            $query="SELECT id,url FROM metadata WHERE status = '' and (account = '' or account = '{$account}') LIMIT {$amount}";
-            $result = $mysqli->query("$query");
+            $available_pending = $result->num_rows;
             $result_array = array();
-            while ($row = $result->fetch_assoc()) {
-                $json = "{\"id\":{$row["id"]},\"url\":\"{$row["url"]}\"}";
-                // $row_string = implode(",",$row);
-                array_push($result_array, $json);             
-            }            
+            $ids_array = array();
+            if ($available_pending == $amount) {
+                //return $result records 
+                while ($row = $result->fetch_assoc()) {
+                    $json = "{\"url\":\"{$row["url"]}\"}";                    
+                    array_push($result_array, $json);             
+                    array_push($ids_array,$row["id"]);
+                }  
+                $result->free();           
+            }
+            
+            if ($available_pending < $amount) {
+                $new_limit = $amount-$available_pending;
+                $available_records_query="SELECT * FROM metadata WHERE account = '' AND status = '' LIMIT {$new_limit}";
+                $result1 = $mysqli->query("$available_records_query");
+                //return $result and $result 1 records 
+                while ($row = $result1->fetch_assoc()) {
+                    $json = "{\"url\":\"{$row["url"]}\"}";                    
+                    array_push($result_array, $json);    
+                    array_push($ids_array,$row["id"]);         
+                }  
+                $result1->free(); 
+            }
+               
             $implodeded = implode(",",$result_array);
-            deliver_response(200, "success", "[" . $implodeded . "]");  
-            $result->free();            
+            
+            //set records to pending and set date
+            foreach ($ids_array as $row) {
+                $update_row_query="UPDATE metadata SET account = '{$account}', status = 'pending', date=current_date() WHERE id={$row}";
+                $result_update = $mysqli->query("$update_row_query"); 
+            }
+
+            deliver_response(200, "success", "[" . $implodeded . "]");
         }
     }
    
@@ -42,4 +61,3 @@
         $json_response = json_encode($response);
         echo $json_response;
    }
-?>

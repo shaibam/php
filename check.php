@@ -13,6 +13,7 @@
             $account = $data->account;
             $user_purchase_only_query="SELECT * FROM metadata WHERE account = '{$account}' AND status = 'purchase'";
             $result = $mysqli->query("$user_only_query");
+            
             $limit=3;
             $available = $limit - $result->num_rows;
             if ($available == 0) {
@@ -27,7 +28,7 @@
                     deliver_response(200, "success", "{\"available\":{$available_pending}}");      
                 } else {
                     $new_limit = $limit-$available_pending;
-                    $available_records_query="SELECT * FROM metadata WHERE account = '' AND status = '' LIMIT ${$new_limit}";
+                    $available_records_query="SELECT * FROM metadata WHERE account = '' AND status = '' LIMIT {$new_limit}";
                     $result = $mysqli->query("$available_records_query");
                     $available_total = $result->num_rows;
                     deliver_response(200, "success", "{\"available\":{$available_total}}");      
