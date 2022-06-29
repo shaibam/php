@@ -12,7 +12,14 @@
 
             $account = $data->account;
             $amount = $data->amount;
-            $query="SELECT id,url FROM metadata WHERE status ='' LIMIT {$amount}";
+            $user_only_query="SELECT * FROM metadata WHERE account = '{$account}' AND (status = '' or status = 'pending')";
+            $result = $mysqli->query("$user_only_query");
+            $limit=3;
+            $available = $limit - $result->num_rows;
+            if ($limit >= $amount) {
+                // serve these records according to amount
+            }
+            $query="SELECT id,url FROM metadata WHERE status = '' and (account = '' or account = '{$account}') LIMIT {$amount}";
             $result = $mysqli->query("$query");
             $result_array = array();
             while ($row = $result->fetch_assoc()) {

@@ -11,11 +11,28 @@
             $mysqli->select_db($database) or die( "Unable to select database");
 
             $account = $data->account;
-            $query="SELECT * FROM metadata WHERE account = '{$account}' AND status =''";
-            $result = $mysqli->query("$query");
+            $user_purchase_only_query="SELECT * FROM metadata WHERE account = '{$account}' AND status = 'purchase'";
+            $result = $mysqli->query("$user_only_query");
             $limit=3;
             $available = $limit - $result->num_rows;
-            deliver_response(200, "success", "{\"available\":{$available}}");      
+            if ($available == 0) {
+                //zero availability
+                deliver_response(200, "success", "{\"available\":{$available}}");      
+            } else {
+                $user_pending_only_query="SELECT * FROM metadata WHERE account = '{$account}' AND status = 'pending'";
+                $result = $mysqli->query("$user_pending_only_query");                
+                $available_pending = $result->num_rows;
+                if ($available_pending ==  $limit) {
+                    //max availability is pending
+                    deliver_response(200, "success", "{\"available\":{$available_pending}}");      
+                } else {
+                    $new_limit = $limit-$available_pending;
+                    $available_records_query="SELECT * FROM metadata WHERE account = '' AND status = '' LIMIT ${$new_limit}";
+                    $result = $mysqli->query("$available_records_query");
+                    $available_total = $result->num_rows;
+                    deliver_response(200, "success", "{\"available\":{$available_total}}");      
+                }
+            }
         }
     }
    
@@ -28,4 +45,3 @@
         $json_response = json_encode($response);
         echo $json_response;
    }
-?>
